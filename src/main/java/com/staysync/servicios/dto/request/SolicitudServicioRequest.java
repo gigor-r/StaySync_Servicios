@@ -21,7 +21,6 @@ public class SolicitudServicioRequest {
 
     @Min(value = 1, message = "La cantidad mínima es 1")
     @Max(value = 10, message = "La cantidad máxima es 10")
-    @Builder.Default
     private Integer cantidad = 1;
 
     @NotNull(message = "La fecha del servicio es obligatoria")
