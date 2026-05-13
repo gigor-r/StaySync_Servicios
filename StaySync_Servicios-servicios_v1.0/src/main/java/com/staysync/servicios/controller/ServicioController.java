@@ -35,6 +35,12 @@ public class ServicioController {
         return ResponseEntity.ok(servicioService.obtenerPorId(id));
     }
 
+    @GetMapping("/solicitudes")
+    @Operation(summary = "Listar todas las solicitudes — uso de recepción/admin")
+    public ResponseEntity<List<SolicitudServicioResponse>> listarTodas() {
+        return ResponseEntity.ok(servicioService.listarTodasSolicitudes());
+    }
+
     @GetMapping("/solicitudes/reserva/{reservaId}")
     @Operation(summary = "Listar solicitudes de una reserva")
     public ResponseEntity<List<SolicitudServicioResponse>> listarPorReserva(@PathVariable Long reservaId) {

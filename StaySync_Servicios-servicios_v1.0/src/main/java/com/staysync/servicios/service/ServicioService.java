@@ -49,6 +49,11 @@ public class ServicioService {
                 .map(this::toSolicitudResponse).collect(Collectors.toList());
     }
 
+    public List<SolicitudServicioResponse> listarTodasSolicitudes() {
+        return solicitudRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toSolicitudResponse).collect(Collectors.toList());
+    }
+
     @Transactional
     public SolicitudServicioResponse crearSolicitud(SolicitudServicioRequest request) {
         Servicio servicio = findOrThrow(request.getServicioId());

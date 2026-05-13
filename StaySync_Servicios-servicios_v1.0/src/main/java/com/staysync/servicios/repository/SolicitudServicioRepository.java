@@ -8,4 +8,5 @@ import java.util.List;
 public interface SolicitudServicioRepository extends JpaRepository<SolicitudServicio, Long> {
     List<SolicitudServicio> findByReservaId(Long reservaId);
     List<SolicitudServicio> findByUsuarioId(Long usuarioId);
+    List<SolicitudServicio> findAllByOrderByCreatedAtDesc();
 }
