@@ -120,4 +120,100 @@ class ServicioServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getReservaId()).isEqualTo(5L);
     }
+
+    @Test
+    @DisplayName("listarSolicitudesPorUsuario() - debe retornar solicitudes del usuario")
+    void debeListarSolicitudesPorUsuario() {
+        SolicitudServicio solicitud = SolicitudServicio.builder()
+                .id(1L).reservaId(1L).usuarioId(7L).servicio(servicio)
+                .cantidad(1).precioTotal(BigDecimal.valueOf(60))
+                .estado(SolicitudServicio.EstadoSolicitud.PENDIENTE)
+                .fechaServicio(LocalDateTime.now().plusDays(1))
+                .createdAt(LocalDateTime.now()).build();
+
+        when(solicitudRepository.findByUsuarioId(7L)).thenReturn(List.of(solicitud));
+
+        List<SolicitudServicioResponse> result = servicioService.listarSolicitudesPorUsuario(7L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getUsuarioId()).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("listarTodasSolicitudes() - debe retornar todas en orden de creación")
+    void debeListarTodasSolicitudes() {
+        SolicitudServicio s1 = SolicitudServicio.builder()
+                .id(1L).reservaId(1L).usuarioId(1L).servicio(servicio)
+                .cantidad(1).precioTotal(BigDecimal.valueOf(60))
+                .estado(SolicitudServicio.EstadoSolicitud.PENDIENTE)
+                .fechaServicio(LocalDateTime.now().plusDays(1))
+                .createdAt(LocalDateTime.now()).build();
+        SolicitudServicio s2 = SolicitudServicio.builder()
+                .id(2L).reservaId(2L).usuarioId(2L).servicio(servicio)
+                .cantidad(3).precioTotal(BigDecimal.valueOf(180))
+                .estado(SolicitudServicio.EstadoSolicitud.COMPLETADO)
+                .fechaServicio(LocalDateTime.now().plusDays(2))
+                .createdAt(LocalDateTime.now()).build();
+
+        when(solicitudRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(s1, s2));
+
+        List<SolicitudServicioResponse> result = servicioService.listarTodasSolicitudes();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(1).getPrecioTotal()).isEqualTo(BigDecimal.valueOf(180));
+    }
+
+    @Test
+    @DisplayName("actualizarEstadoSolicitud() - debe cambiar el estado de la solicitud")
+    void debeCambiarEstadoDeSolicitud() {
+        SolicitudServicio solicitud = SolicitudServicio.builder()
+                .id(1L).reservaId(1L).usuarioId(1L).servicio(servicio)
+                .cantidad(1).precioTotal(BigDecimal.valueOf(60))
+                .estado(SolicitudServicio.EstadoSolicitud.PENDIENTE)
+                .fechaServicio(LocalDateTime.now().plusDays(1))
+                .createdAt(LocalDateTime.now()).build();
+        SolicitudServicio actualizado = SolicitudServicio.builder()
+                .id(1L).reservaId(1L).usuarioId(1L).servicio(servicio)
+                .cantidad(1).precioTotal(BigDecimal.valueOf(60))
+                .estado(SolicitudServicio.EstadoSolicitud.EN_PROCESO)
+                .fechaServicio(LocalDateTime.now().plusDays(1))
+                .createdAt(LocalDateTime.now()).build();
+
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+        when(solicitudRepository.save(any())).thenReturn(actualizado);
+
+        SolicitudServicioResponse response =
+                servicioService.actualizarEstadoSolicitud(1L, SolicitudServicio.EstadoSolicitud.EN_PROCESO);
+
+        assertThat(response.getEstado()).isEqualTo(SolicitudServicio.EstadoSolicitud.EN_PROCESO);
+        verify(solicitudRepository).save(solicitud);
+    }
+
+    @Test
+    @DisplayName("actualizarEstadoSolicitud() - debe lanzar excepción si la solicitud no existe")
+    void debeLanzarExcepcionSolicitudInexistente() {
+        when(solicitudRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                servicioService.actualizarEstadoSolicitud(99L, SolicitudServicio.EstadoSolicitud.EN_PROCESO))
+                .isInstanceOf(ServicioNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("crearSolicitud() - debe lanzar excepción si el servicio no existe")
+    void debeLanzarExcepcionServicioInexistente() {
+        SolicitudServicioRequest request = new SolicitudServicioRequest();
+        request.setServicioId(99L);
+        request.setReservaId(1L);
+        request.setUsuarioId(1L);
+        request.setCantidad(1);
+        request.setFechaServicio(LocalDateTime.now().plusDays(1));
+
+        when(servicioRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicioService.crearSolicitud(request))
+                .isInstanceOf(ServicioNotFoundException.class);
+
+        verify(solicitudRepository, never()).save(any());
+    }
 }
